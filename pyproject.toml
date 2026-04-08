@@ -13,4 +13,4 @@ dependencies = [
 server = "server.app:main"
 
 [tool.openenv]
-entrypoint = "server.app:main"
+entrypoint = "server.app:main"# fix
