@@ -1,9 +1,8 @@
 # ============================================================
-# Dockerfile — Smart Monsoon-Resilient Hydroponic Farm
-# Lightweight multi-stage build
+# Dockerfile — Smart Monsoon Farm (FINAL FIXED VERSION)
 # ============================================================
 
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,49 +13,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first (layer caching)
+# Copy requirements first (for caching)
 COPY deployment/requirements.txt ./requirements.txt
 
-# Install Python dependencies
-# Use CPU-only torch to keep image size manageable (~2GB vs 6GB)
+# Install dependencies
 RUN pip install --no-cache-dir \
     torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install fastapi uvicorn
 
-# ============================================================
-# Copy source code
-# ============================================================
-COPY env/           ./env/
-COPY tasks/         ./tasks/
-COPY grader/        ./grader/
-COPY baseline/      ./baseline/
-COPY configs/       ./configs/
-COPY app/           ./app/
+# Copy project files
+COPY env/       ./env/
+COPY tasks/     ./tasks/
+COPY grader/    ./grader/
+COPY baseline/  ./baseline/
+COPY configs/   ./configs/
+COPY app/       ./app/
 
-# Create empty __init__ files if missing
+# Copy api file (IMPORTANT)
+COPY api.py ./api.py
+
+# Ensure init files exist
 RUN touch env/__init__.py tasks/__init__.py grader/__init__.py baseline/__init__.py
 
-# ============================================================
 # Environment variables
-# ============================================================
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 ENV SEED=42
 
 # ============================================================
-# Default: run heuristic inference on medium task
-# Override with: docker run ... python baseline/inference.py --task hard --agent ppo
+# RUN API SERVER (REQUIRED FOR GRADER)
 # ============================================================
-CMD ["python", "baseline/inference.py", "--task", "medium", "--agent", "heuristic", "--verbose"]
-
-# ============================================================
-# Streamlit target (for HF Spaces)
-# Build: docker build --target streamlit -t monsoon-farm-ui .
-# ============================================================
-FROM base AS streamlit
 
 EXPOSE 7860
-
-RUN pip install fastapi uvicorn
 
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]

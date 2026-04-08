@@ -2,7 +2,12 @@ from fastapi import FastAPI
 from env.environment import MonsoonFarmEnv
 
 app = FastAPI()
+
 env = MonsoonFarmEnv()
+
+@app.get("/")
+def home():
+    return {"message": "API running"}   # 👈 ADD THIS
 
 @app.get("/health")
 def health():
@@ -10,18 +15,16 @@ def health():
 
 @app.post("/reset")
 def reset():
-    return {"observation": env.reset()}
+    state = env.reset()
+    return {"state": str(state)}
 
 @app.post("/step")
 def step(action: dict):
-    obs, reward, done, info = env.step(action.get("action", None))
+    action_value = action.get("action", 0)
+    next_state, reward, done, info = env.step(action_value)
     return {
-        "observation": obs,
+        "state": str(next_state),
         "reward": reward,
         "done": done,
         "info": info
     }
-
-@app.get("/state")
-def state():
-    return env.state()
