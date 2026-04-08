@@ -1,13 +1,21 @@
 [project]
 name = "smart-monsoon-farm"
 version = "0.1.0"
+description = "OpenEnv Smart Monsoon Farm"
 requires-python = ">=3.11"
+
+authors = [
+    { name = "Chinmayee" }
+]
 
 dependencies = [
     "fastapi",
     "uvicorn",
     "openenv-core>=0.2.0"
 ]
+
+[project.scripts]
+server = "server.app:main"
 
 [tool.openenv]
 entrypoint = "server.app:main"
