@@ -1,0 +1,9 @@
+[project]
+name = "smart-monsoon-farm"
+version = "0.1.0"
+description = "OpenEnv Smart Monsoon Farm Environment"
+authors = [{name = "Your Name"}]
+dependencies = []
+
+[tool.setuptools]
+packages = ["env", "tasks", "grader", "baseline", "configs"]
