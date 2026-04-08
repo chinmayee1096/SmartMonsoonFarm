@@ -1,12 +1,7 @@
 [project]
 name = "smart-monsoon-farm"
 version = "0.1.0"
-description = "OpenEnv Smart Monsoon Farm"
 requires-python = ">=3.11"
-
-authors = [
-    { name = "Chinmayee" }
-]
 
 dependencies = [
     "fastapi",
