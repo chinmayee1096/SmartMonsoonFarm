@@ -57,7 +57,6 @@ FROM base AS streamlit
 
 EXPOSE 7860
 
-CMD ["streamlit", "run", "app/streamlit_app.py", \
-     "--server.port=7860", \
-     "--server.address=0.0.0.0", \
-     "--server.headless=true"]
+RUN pip install fastapi uvicorn
+
+CMD bash -c "uvicorn api:app --host 0.0.0.0 --port 8000 & streamlit run app/streamlit_app.py --server.port=7860 --server.address=0.0.0.0"
