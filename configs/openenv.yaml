@@ -1,0 +1,347 @@
+# ============================================================
+# openenv.yaml — Smart Monsoon-Resilient Urban Farm
+# OpenEnv Configuration for Meta PyTorch Hackathon
+# ============================================================
+
+name: monsoon_hydroponic_farm
+version: "1.0.0"
+description: >
+  A sequential decision-making RL environment simulating a rooftop/vertical
+  hydroponic farm in Bengaluru, India. The agent manages planting, irrigation,
+  nutrient dosing, pest control, and harvest/sales decisions across a full
+  monsoon season. Weather, pests, and market prices are stochastic.
+
+authors:
+  - Smart Farm RL Team
+
+license: MIT
+
+# ============================================================
+# Environment settings
+# ============================================================
+environment:
+  time_step: 1_day
+  observation_type: continuous_vector
+  action_type: composite_continuous_discrete
+
+  stochastic_elements:
+    - bengaluru_monsoon_weather       # Correlated rain, temperature, humidity
+    - heatwave_events                 # Random, May-June high probability
+    - pest_outbreak                   # Humidity-correlated stochastic spread
+    - market_price_random_walk        # Mandi price fluctuations
+    - festival_demand_surge           # Seasonal demand multiplier
+
+  reproducibility:
+    seed: 42
+
+# ============================================================
+# Observation Space
+# ============================================================
+observation_space:
+  type: Box
+  dtype: float32
+  low: -1.0
+  high: 3.0
+
+  components:
+    # Time
+    - name: day_normalized
+      dim: 1
+      range: [0.0, 1.0]
+      description: Current day / episode length
+
+    - name: is_monsoon
+      dim: 1
+      range: [0.0, 1.0]
+      description: Binary flag for monsoon season (June-October)
+
+    # Weather (5 features)
+    - name: temperature_norm
+      dim: 1
+      range: [0.0, 1.0]
+      description: (temperature_C - 15) / 25
+
+    - name: humidity_norm
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: rainfall_norm
+      dim: 1
+      range: [0.0, 1.0]
+      description: Capped at 100mm/day = 1.0
+
+    - name: weather_type_norm
+      dim: 1
+      range: [0.0, 1.0]
+      description: WeatherType enum / 5
+
+    - name: consecutive_dry_norm
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: forecast_3_days
+      dim: 3
+      range: [0.0, 1.0]
+      description: Simplified 3-day weather forecast
+
+    # Crop slots (12 slots × 6 features = 72 dims)
+    - name: slot_features
+      dim: 72  # 12 slots * 6
+      range: [0.0, 1.0]
+      description: >
+        Per slot: [stage/5, health, nutrient_level, water_stress,
+                   pest_pressure, days_since_planted/120]
+
+    # Resources (4 features)
+    - name: water_level_norm
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: nutrient_stock_norm
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: pesticide_stock_norm
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: budget_norm
+      dim: 1
+      range: [0.0, 2.0]
+      description: budget_INR / 100000
+
+    # Market prices (5 features)
+    - name: spinach_price_norm
+      dim: 1
+      range: [0.4, 2.5]
+
+    - name: lettuce_price_norm
+      dim: 1
+      range: [0.4, 2.5]
+
+    - name: tomato_price_norm
+      dim: 1
+      range: [0.4, 2.5]
+
+    - name: herbs_price_norm
+      dim: 1
+      range: [0.4, 2.5]
+
+    - name: demand_multiplier
+      dim: 1
+      range: [0.5, 2.0]
+
+    # Eco & alerts (3 features)
+    - name: eco_score
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: runoff_risk
+      dim: 1
+      range: [0.0, 1.0]
+
+    - name: pest_alert
+      dim: 1
+      range: [0.0, 1.0]
+
+  total_dims: 94   # 22 global + 72 slot-level
+
+# ============================================================
+# Action Space
+# ============================================================
+action_space:
+  type: Box
+  dtype: float32
+  low: 0.0
+  high: 1.0
+
+  description: >
+    Per-slot continuous controls (5 dims × num_slots) + 1 global sell fraction.
+    Slot dims: [irrigate, nutrient_dose, pest_control, harvest_flag, plant_decision]
+
+  components:
+    - name: per_slot_controls
+      dims_per_slot: 5
+      slots: 12
+      total_dims: 60
+      breakdown:
+        - irrigate:       [0.0, 1.0]   # 0=no water, 1=max irrigation
+        - nutrient_dose:  [0.0, 1.0]   # 0=none, 1=max dose
+        - pest_control:   [0.0, 1.0]   # <0.33=none, 0.33-0.66=biological, >0.66=chemical
+        - harvest_flag:   [0.0, 1.0]   # >0.6 = harvest this slot
+        - plant_decision: [0.0, 1.0]   # >0.4 = plant; value determines crop type
+
+    - name: sell_fraction
+      dims: 1
+      range: [0.0, 1.0]
+      description: Fraction of harvested stock to sell today
+
+  total_dims: 61
+
+  # Simplified discrete action space (for Easy task)
+  discrete_alternative:
+    type: MultiDiscrete
+    nvec: [5, 5, 5, 5, 5, 5, 5, 5]   # 5 actions per 8 slots (easy task)
+    actions:
+      0: do_nothing
+      1: plant_best_crop
+      2: water_and_feed
+      3: pest_control_biological
+      4: harvest_if_ready
+
+# ============================================================
+# Reward Definition
+# ============================================================
+reward:
+  type: multi_objective
+  total_range: [-2.0, 2.0]
+
+  components:
+    - name: profit_reward
+      weight: 1.0
+      formula: "step_profit_INR / profit_scale"
+      description: Normalised daily profit/loss
+
+    - name: yield_reward
+      weight: 0.5
+      formula: "harvested_kg / 5.0"
+      description: Dense reward for producing food
+
+    - name: eco_bonus
+      weight: 0.3
+      formula: "max(0, eco_score - 0.5) * 2.0"
+      description: Reward for eco-score above 0.5
+
+    - name: water_penalty
+      weight: -0.2
+      formula: "overuse_fraction if water_used > 1.5x_optimal else 0"
+      description: Penalty for over-irrigation
+
+    - name: chemical_penalty
+      weight: -0.3
+      formula: "chemical_slots / num_slots"
+      description: Penalty for chemical pest control usage
+
+    - name: daily_health_bonus
+      weight: 0.1
+      formula: "avg_crop_health * 0.1"
+      description: Dense partial reward for maintaining healthy crops
+
+    - name: survival_bonus
+      weight: 0.2
+      formula: "fraction of crops surviving extreme weather"
+      description: Bonus during heatwave/heavy rain survival
+
+    - name: budget_penalty
+      weight: -0.5
+      formula: "-0.5 if budget < 0"
+      description: Hard penalty for bankruptcy
+
+# ============================================================
+# Tasks
+# ============================================================
+tasks:
+  - id: easy
+    name: "Dry Season Starter"
+    description: >
+      60-day episode starting in December (Bengaluru dry season).
+      Stable weather, generous budget. Ideal for learning basic farm management.
+    episode_length: 60
+    start_month: 12
+    num_slots: 8
+    initial_budget_inr: 75000
+    water_tank_capacity: 6000
+    action_space: discrete_multidiscrete
+    targets:
+      profit_inr: 20000
+      yield_kg: 30
+      eco_score: 0.6
+    grader:
+      weights: {profit: 0.45, yield: 0.30, eco: 0.15, efficiency: 0.10}
+
+  - id: medium
+    name: "Monsoon Manager"
+    description: >
+      90-day episode starting in June (full monsoon season). Full weather
+      variability including heatwaves and heavy rain. Standard budget.
+      Continuous action space. Requires dynamic adaptation.
+    episode_length: 90
+    start_month: 6
+    num_slots: 12
+    initial_budget_inr: 50000
+    water_tank_capacity: 5000
+    action_space: continuous_box
+    targets:
+      profit_inr: 35000
+      yield_kg: 60
+      eco_score: 0.7
+    grader:
+      weights: {profit: 0.35, yield: 0.25, eco: 0.20, pesticide: 0.10,
+                diversity: 0.05, efficiency: 0.05}
+
+  - id: hard
+    name: "Pre-Monsoon Heatwave Survivor"
+    description: >
+      120-day episode starting in May (pre-monsoon heatwaves transitioning
+      to monsoon). Tight budget, smaller water tank, 16 slots to manage.
+      Strict eco requirements. Must survive financial and environmental stress.
+    episode_length: 120
+    start_month: 5
+    num_slots: 16
+    initial_budget_inr: 30000
+    water_tank_capacity: 4000
+    action_space: continuous_box
+    targets:
+      profit_inr: 50000
+      yield_kg: 100
+      eco_score: 0.8
+    grader:
+      weights: {profit: 0.30, yield: 0.20, eco: 0.25, pesticide: -0.05,
+                runoff: -0.05, diversity: 0.08, survival: 0.07, efficiency: 0.05}
+
+# ============================================================
+# Baselines
+# ============================================================
+baselines:
+  - name: random_agent
+    description: Uniformly random actions — sanity check lower bound
+    expected_score: 0.05-0.15
+
+  - name: heuristic_agent
+    description: Rule-based expert policy with weather-adaptive irrigation
+    expected_score: 0.50-0.70
+    entry_point: baseline/inference.py
+
+  - name: ppo_agent
+    description: Proximal Policy Optimisation (Stable-Baselines3)
+    expected_score: 0.65-0.85
+    entry_point: baseline/inference.py --agent ppo
+
+# ============================================================
+# Evaluation Protocol
+# ============================================================
+evaluation:
+  episodes: 10
+  seed_range: [42, 51]
+  metric: composite_score   # 0.0 to 1.0
+  report:
+    - mean_composite_score
+    - std_composite_score
+    - mean_profit_inr
+    - mean_yield_kg
+    - mean_eco_score
+    - water_efficiency
+
+# ============================================================
+# Environment API
+# ============================================================
+api:
+  reset: "env.reset() -> FarmObservation"
+  step:  "env.step(FarmAction) -> (FarmObservation, float, bool, dict)"
+  state: "env.state() -> FarmState"
+  render: "env.render() -> str"
+
+  pydantic_models:
+    state: env.models.FarmState
+    action: env.models.FarmAction
+    observation: env.models.FarmObservation

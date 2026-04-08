@@ -1,0 +1,39 @@
+# ============================================================
+# requirements.txt — Monsoon Farm RL Environment
+# ============================================================
+
+# Core scientific
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Pydantic v2 (for typed models)
+pydantic>=2.0.0
+
+# Gymnasium (OpenAI Gym successor)
+gymnasium>=0.29.0
+
+# Reinforcement Learning
+stable-baselines3>=2.1.0
+torch>=2.0.0           # PyTorch (Meta requirement)
+
+# Experiment tracking (optional)
+tensorboard>=2.13.0
+
+# YAML config parsing
+pyyaml>=6.0
+
+# Visualisation (Streamlit app)
+streamlit>=1.28.0
+plotly>=5.17.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# Testing
+pytest>=7.4.0
+
+# Utilities
+tqdm>=4.65.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0   # Agmarknet portal scraping (no API key needed)
+pytz>=2023.3             # IST timezone support
+lxml>=4.9.0              # Fast HTML parser for BeautifulSoup
