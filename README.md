@@ -1,4 +1,4 @@
-# 🌱 Smart Monsoon-Resilient Urban Hydroponic Farm
+#  Smart Monsoon-Resilient Urban Hydroponic Farm
 ### Meta PyTorch Hackathon — OpenEnv RL Environment
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://python.org)
@@ -8,7 +8,7 @@
 
 ---
 
-## 📌 Overview
+##  Overview
 
 A **production-grade, OpenEnv-compatible Reinforcement Learning environment** simulating a rooftop vertical hydroponic farm in **Bengaluru, India** — one of the world's fastest-growing tech cities, where urban food security and water scarcity are pressing real-world problems.
 
@@ -16,7 +16,7 @@ The RL agent manages the complete crop lifecycle across a full monsoon season, m
 
 ---
 
-## 🎯 Problem Statement
+##  Problem Statement
 
 Urban rooftop farms in Bengaluru face:
 - **Monsoon variability** — sudden heavy rain (June–September) vs brutal dry spells
@@ -29,7 +29,7 @@ The agent must **maximise profit and crop yield while minimising water usage and
 
 ---
 
-## 🏗 Project Structure
+##  Project Structure
 
 ```
 monsoon_farm/
@@ -63,7 +63,7 @@ monsoon_farm/
 
 ---
 
-## ⚡ Quickstart
+##  Quickstart
 
 ### 1. Install dependencies
 
@@ -94,7 +94,7 @@ python baseline/inference.py --task easy --agent random
 
 ---
 
-## 🔬 Environment Details
+##  Environment Details
 
 ### OpenEnv API
 
@@ -130,7 +130,7 @@ model.learn(total_timesteps=200_000)
 
 ---
 
-## 🌡 Environment Dynamics
+##  Environment Dynamics
 
 ### Weather Model (Bengaluru Climate)
 
@@ -177,7 +177,7 @@ Health is degraded by:
 
 ---
 
-## 🏆 Tasks & Grading
+##  Tasks & Grading
 
 ### Task Comparison
 
@@ -215,7 +215,7 @@ print(grade.to_dict())
 
 ---
 
-## 🎁 Reward Function
+##  Reward Function
 
 ```
 R = 1.0 × profit_reward           (daily profit / normalisation)
@@ -230,7 +230,7 @@ R = 1.0 × profit_reward           (daily profit / normalisation)
 
 ---
 
-## 📊 Observation Space (94 dims)
+##  Observation Space (94 dims)
 
 | Group | Dims | Description |
 |-------|------|-------------|
@@ -243,7 +243,7 @@ R = 1.0 × profit_reward           (daily profit / normalisation)
 
 ---
 
-## 🤖 Action Space
+##  Action Space
 
 **Continuous Box** `[0, 1]^61` (medium/hard):
 - Per slot (×12): `[irrigate, nutrient_dose, pest_control, harvest_flag, plant_decision]`
@@ -254,7 +254,7 @@ R = 1.0 × profit_reward           (daily profit / normalisation)
 
 ---
 
-## 🐳 Docker Deployment
+##  Docker Deployment
 
 ```bash
 # Build inference image
@@ -273,7 +273,7 @@ docker run -p 7860:7860 monsoon-farm-ui
 
 ---
 
-## 🤗 Hugging Face Spaces
+##  Hugging Face Spaces
 
 The Streamlit app (`app/streamlit_app.py`) runs natively on HF Spaces:
 
@@ -285,15 +285,15 @@ python_version: "3.11"
 ```
 
 Features:
-- 🎮 Interactive step-by-step or auto-play simulation
-- 🌦 Live weather dashboard
-- 🪴 Visual crop slot grid (health, stage, pest pressure)
-- 📈 Plotly charts: profit, yield, eco-score, water, economics
-- 🏆 Episode grading with score gauge
+-  Interactive step-by-step or auto-play simulation
+-  Live weather dashboard
+-  Visual crop slot grid (health, stage, pest pressure)
+-  Plotly charts: profit, yield, eco-score, water, economics
+-  Episode grading with score gauge
 
 ---
 
-## 📦 Dependencies
+##  Dependencies
 
 | Package | Purpose |
 |---------|---------|
@@ -308,7 +308,7 @@ Features:
 
 ---
 
-## 🔬 Reproducibility
+##  Reproducibility
 
 All stochastic components are seeded:
 ```python
@@ -320,13 +320,13 @@ env = MonsoonFarmEnv(seed=42)   # Default seed
 
 ---
 
-## 📄 License
+##  License
 
 MIT License — see `LICENSE` for details.
 
 ---
 
-## 🙏 Acknowledgements
+##  Acknowledgements
 
 - Bengaluru climate data sourced from IMD (India Meteorological Department) monthly normals
 - Mandi price dynamics inspired by APMC (Agricultural Produce Market Committee) datasets
